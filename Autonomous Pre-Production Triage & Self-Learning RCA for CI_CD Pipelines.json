@@ -1,0 +1,448 @@
+{
+  "name": "Autonomous Pre-Production Triage & Self-Learning RCA for CI/CD Pipelines",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "bed071fe-7933-4824-8dd2-27a03e2b483e",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "3c3f5732-6746-484e-ad0f-8362733e7435",
+      "name": "Webhook",
+      "webhookId": "bed071fe-7933-4824-8dd2-27a03e2b483e"
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "llama3:latest",
+          "mode": "list",
+          "cachedResultName": "llama3:latest"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "=You are a DevOps AI Orchestrator. Read the following log and categorize it as exactly one of these three options: Security, Compliance, or Unknown. Do not output any other text, explanations, or punctuation. Output ONLY the category name. \n\nLog: {{$json.body.log_data}}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.ollama",
+      "typeVersion": 1,
+      "position": [
+        208,
+        0
+      ],
+      "id": "5da356a2-ffc0-4195-833a-a3a6b2a5c1db",
+      "name": "Message a model",
+      "credentials": {
+        "ollamaApi": {
+          "id": "mv3cE49dP45qMEGD",
+          "name": "Ollama account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.content }}",
+                    "rightValue": "Security",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "450f7f4e-d087-48d5-94b1-b623feb66b66"
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "42b91edf-9296-41f0-ac45-ce955223689d",
+                    "leftValue": "={{ $json.content }}",
+                    "rightValue": "Compliance",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "38a673c9-3faa-47fe-8da8-595e23607fa9",
+                    "leftValue": "={{ $json.content }}",
+                    "rightValue": "Unknown",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [
+        560,
+        0
+      ],
+      "id": "b63eab88-4a23-4c9a-a8c9-7bd1bab161e3",
+      "name": "Switch"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "6e0290da-4224-4931-9152-379856de1e3c",
+              "leftValue": "={{ $('Webhook').item.json.body.log_data }}",
+              "rightValue": "AWS Secret",
+              "operator": {
+                "type": "string",
+                "operation": "contains"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        976,
+        -80
+      ],
+      "id": "9d6a6d1f-fc41-428f-a480-597bb5f6bc00",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "963a2155-fb33-44c4-bd1c-2d12b27c35d7",
+              "name": "slack_message",
+              "value": "🚨 [AI DevOps Orchestrator] Known Security Exception Triggered 🚨  • Pipeline: Jenkins Pre-Prod Build • Error Category: Security Failure • Incident Detected: Exposed AWS Secret Key • Threat Level: Critical  ✅ Automated Action: Jenkins Pipeline halted instantly to protect cloud infrastructure. 🛠️ Resolution Found in RAG Repo: Refer to Internal Playbook #SEC-094 to revoke and rotate this secret. 🔗 Solution Playbook Link: https://internal-wiki.local/docs/rotating-exposed-aws-keys",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1232,
+        -304
+      ],
+      "id": "056a773d-8507-4173-bb91-576493b91914",
+      "name": "Slack: Alert Developer (Known Fix)"
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "llama3:latest",
+          "mode": "list",
+          "cachedResultName": "llama3:latest"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "=You are an expert Site Reliability Engineer. A brand new, undocumented pipeline failure has occurred. Analyze this log and write a brief, 3-sentence Root Cause Analysis (RCA) detailing what the error means and a recommended remediation step.\n\nLog: {{ $('Webhook').item.json.body.log_data }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.ollama",
+      "typeVersion": 1,
+      "position": [
+        1184,
+        16
+      ],
+      "id": "f6d45f84-6b33-48af-b07d-ce5e783f08ac",
+      "name": "Agent: Execute RCA",
+      "credentials": {
+        "ollamaApi": {
+          "id": "mv3cE49dP45qMEGD",
+          "name": "Ollama account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "e0e06a2f-3645-481e-a934-49702601911c",
+              "name": "approval_card",
+              "value": "=⚠️ [AI DevOps Orchestrator] UNKNOWN EXCEPTION DETECTED ⚠️  The AI has executed an automated Root Cause Analysis for a new issue.  📋 AI-Generated RCA Docs: {{ $json.content }}  👉 Action Required: Should the AI commit this solution to the Historical RAG Repo? [ APPROVE & TEACH AI ]  |  [ REJECT & TRIAGE MANUALLY ]",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1456,
+        272
+      ],
+      "id": "7a6e5db4-5912-4fd9-b8e6-46c8092838fc",
+      "name": "Slack: Ask SRE for Approval"
+    },
+    {
+      "parameters": {
+        "content": "Title: Autonomous Pre-Production Triage & Self-Learning RCA for CI/CD Pipelines\nThe Problem: In standard DevOps pipelines, when a build fails due to a security vulnerability or compliance violation, it creates a manual bottleneck. SREs and DevOps engineers suffer from massive \"alert fatigue\" because they have to manually read Jenkins logs, identify the error, write a Root Cause Analysis (RCA), create a Jira ticket, and notify the developer. Worse, they often repeat this manual process for the exact same errors, leading to duplicate tickets and wasted hours.\nThe Solution: An Agentic AI Middle Layer that autonomously intercepts Jenkins failures, checks a historical knowledge base (RAG) to see if the error is known, instantly halts the pipeline, and provides the exact fix to the developer via Slack—only escalating to a human for brand-new, unseen errors.",
+        "height": 336,
+        "width": 512
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -32,
+        -384
+      ],
+      "typeVersion": 1,
+      "id": "29583b62-072a-4a92-9069-2029c8a07115",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "dbd12bea-4df9-4d1e-a37a-6913ee1eaea9",
+              "name": "",
+              "value": "",
+              "type": "string"
+            },
+            {
+              "id": "87d6ae4c-0119-4e78-89d7-64f9ec4feadc",
+              "name": "alart",
+              "value": "🚨 [AI Orchestrator] Uncategorized Infrastructure Exception Detected. Manual triage required.",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1168,
+        272
+      ],
+      "id": "50495cfb-747c-4d50-9cc2-d1cae9ccbc24",
+      "name": "Slack: SRE Manual Triage"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "updateFields": {}
+      },
+      "type": "n8n-nodes-base.jira",
+      "typeVersion": 1,
+      "position": [
+        1440,
+        -304
+      ],
+      "id": "512afcba-47b4-4b00-a110-e58cb23fa309",
+      "name": "jira_action"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "3ae4cf79-aaf0-4fcd-b677-3548598928a1",
+              "name": "learning_state",
+              "value": "[System Update] Human engineer approved RCA. Incident signature successfully written to core historical repository. This issue is now flagged as a 'Known Exception' for future builds",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1664,
+        272
+      ],
+      "id": "2007a837-77df-4a48-9d4b-4e7842444bfa",
+      "name": "Database: Update RAG Repo & Memory"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Message a model",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Message a model": {
+      "main": [
+        [
+          {
+            "node": "Switch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Slack: SRE Manual Triage",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Slack: Alert Developer (Known Fix)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Agent: Execute RCA",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Agent: Execute RCA": {
+      "main": [
+        []
+      ]
+    },
+    "Slack: Alert Developer (Known Fix)": {
+      "main": [
+        [
+          {
+            "node": "jira_action",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Slack: SRE Manual Triage": {
+      "main": [
+        [
+          {
+            "node": "Slack: Ask SRE for Approval",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Slack: Ask SRE for Approval": {
+      "main": [
+        [
+          {
+            "node": "Database: Update RAG Repo & Memory",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "92d53fa2-5c7d-48ee-a3b3-c4361f720c28",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "8c56851873ebb99fde7fb574c7cccde353aaf0c9c2901f0ec0f7fa606f0398d1"
+  },
+  "id": "AXo6Fw8Uj0ft0As0",
+  "tags": []
+}
