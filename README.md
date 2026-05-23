@@ -43,3 +43,6 @@ autonomously catching hardcoded secrets or policy violations before they are dep
 ● Seamless Scalability: As the engineering team grows and pushes more code, the AI 
 Middle Layer scales infinitely to handle the increased pipeline volume without requiring 
 the business to hire additional DevOps support staff.
+
+<img width="1832" height="825" alt="image" src="https://github.com/user-attachments/assets/a7446697-621c-4bd3-8c0b-eb0b692c06c3" />
+
